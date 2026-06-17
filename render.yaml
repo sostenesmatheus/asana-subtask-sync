@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: asana-subtask-sync
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ASANA_TOKEN
+        sync: false
+      - key: PROJECT_GID
+        sync: false
+      - key: BASE_URL
+        sync: false
