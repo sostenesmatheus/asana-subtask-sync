@@ -3,11 +3,10 @@ Copia comentarios e anexos de subtarefas para a tarefa principal no Asana.
 Roda via GitHub Actions a cada 15 minutos.
 """
 import os
-import sys
 import httpx
 
 TOKEN = os.environ["ASANA_TOKEN"]
-PROJECT_GID = os.environ.get("PROJECT_GID", "1211036990943103")
+PROJECT_GID = os.environ.get("PROJECT_GID") or "1211036990943103"
 BASE = "https://app.asana.com/api/1.0"
 MARKER = "[sync-subtask]"  # incluido em cada comentario copiado para evitar duplicatas
 
@@ -29,7 +28,7 @@ def get_tasks():
 
 
 def get_subtasks(task_gid):
-    return api("GET", f"/tasks/{task_gid}/subtasks", params={"opt_fields": "gid,name"})
+    return api("GET", f"/tasks/{task_gid}/subtasks", params={"opt_fields": "gid,name,notes"})
 
 
 def get_stories(task_gid):
@@ -46,6 +45,10 @@ def get_attachments(task_gid):
 
 def post_comment(task_gid, text):
     api("POST", f"/tasks/{task_gid}/stories", json={"data": {"text": text}})
+
+
+def sync_notes(sub_gid, parent_notes):
+    api("PUT", f"/tasks/{sub_gid}", json={"data": {"notes": parent_notes}})
 
 
 def copy_attachment(task_gid, name, download_url):
@@ -84,10 +87,16 @@ def main():
 
         parent_stories = get_stories(task_gid)
         parent_attachments = get_attachments(task_gid)
+        parent_notes = api("GET", f"/tasks/{task_gid}", params={"opt_fields": "notes"}).get("notes") or ""
 
         for sub in subtasks:
             sub_gid = sub["gid"]
             sub_name = sub.get("name", "subtarefa")
+
+            # --- Descricao ---
+            if not sub.get("notes") and parent_notes:
+                sync_notes(sub_gid, parent_notes)
+                print(f"  descricao copiada para subtarefa '{sub_name}'")
 
             # --- Comentarios ---
             for story in get_stories(sub_gid):
