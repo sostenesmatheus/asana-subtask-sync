@@ -24,7 +24,7 @@ def api(method, path, **kwargs):
 
 
 def get_tasks():
-    return api("GET", f"/projects/{PROJECT_GID}/tasks", params={"opt_fields": "gid,name"})
+    return api("GET", f"/projects/{PROJECT_GID}/tasks", params={"opt_fields": "gid,name,notes"})
 
 
 def get_subtasks(task_gid):
@@ -87,7 +87,7 @@ def main():
 
         parent_stories = get_stories(task_gid)
         parent_attachments = get_attachments(task_gid)
-        parent_notes = api("GET", f"/tasks/{task_gid}", params={"opt_fields": "notes"}).get("notes") or ""
+        parent_notes = task.get("notes") or ""
 
         for sub in subtasks:
             sub_gid = sub["gid"]
